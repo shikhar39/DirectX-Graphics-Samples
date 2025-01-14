@@ -39,6 +39,7 @@ struct Vertex
 {
     XMFLOAT3 position;
     XMFLOAT3 normal;
+    XMFLOAT2 uvs;
 };
 
 #endif // RAYTRACINGHLSLCOMPAT_H

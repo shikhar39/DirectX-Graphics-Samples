@@ -272,7 +272,6 @@ LRESULT CALLBACK Win32Application::WindowProc(HWND hWnd, UINT message, WPARAM wP
             pSample->OnMouseMove(x, y);
         }
         return 0;
-<<<<<<< HEAD
     case WM_MOUSEWHEEL:
         if (pSample)
         {
@@ -282,9 +281,6 @@ LRESULT CALLBACK Win32Application::WindowProc(HWND hWnd, UINT message, WPARAM wP
             pSample->OnMouseScroll(delta, x, y);
         }
         return 0;
-=======
-
->>>>>>> 7aa24663f26e547a5bc437db028dfcfdb4b3c8f3
     case WM_LBUTTONDOWN:
     {
         UINT x = LOWORD(lParam);
