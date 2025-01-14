@@ -28,6 +28,7 @@ namespace GlobalRootSignatureParams {
 namespace LocalRootSignatureParams {
     enum Value {
         CubeConstantSlot = 0,
+        CubeTextureSlot,
         Count 
     };
 }
