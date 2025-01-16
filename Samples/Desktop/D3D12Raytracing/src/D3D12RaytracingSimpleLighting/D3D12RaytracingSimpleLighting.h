@@ -21,6 +21,7 @@ namespace GlobalRootSignatureParams {
         AccelerationStructureSlot,
         SceneConstantSlot,
         VertexBuffersSlot,
+        TextureSlot,
         Count 
     };
 }
@@ -28,7 +29,6 @@ namespace GlobalRootSignatureParams {
 namespace LocalRootSignatureParams {
     enum Value {
         CubeConstantSlot = 0,
-        CubeTextureSlot,
         Count 
     };
 }

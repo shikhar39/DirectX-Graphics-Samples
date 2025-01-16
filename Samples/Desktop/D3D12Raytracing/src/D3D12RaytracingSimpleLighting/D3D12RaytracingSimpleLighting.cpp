@@ -202,15 +202,20 @@ void D3D12RaytracingSimpleLighting::CreateRootSignatures()
     // Global Root Signature
     // This is a root signature that is shared across all raytracing shaders invoked during a DispatchRays() call.
     {
-        CD3DX12_DESCRIPTOR_RANGE ranges[2]; // Perfomance TIP: Order from most frequent to least frequent.
+        CD3DX12_DESCRIPTOR_RANGE ranges[3]; // Perfomance TIP: Order from most frequent to least frequent.
         ranges[0].Init(D3D12_DESCRIPTOR_RANGE_TYPE_UAV, 1, 0);  // 1 output texture
         ranges[1].Init(D3D12_DESCRIPTOR_RANGE_TYPE_SRV, 2, 1);  // 2 static index and vertex buffers.
 
+        CD3DX12_DESCRIPTOR_RANGE textureRange;
+        textureRange.Init(D3D12_DESCRIPTOR_RANGE_TYPE_SRV, 1, 3);
+
+        ranges[2].Init(D3D12_DESCRIPTOR_RANGE_TYPE_SRV, 1, 3);  // texture to be mapped on the object
         CD3DX12_ROOT_PARAMETER rootParameters[GlobalRootSignatureParams::Count];
         rootParameters[GlobalRootSignatureParams::OutputViewSlot].InitAsDescriptorTable(1, &ranges[0]);
         rootParameters[GlobalRootSignatureParams::AccelerationStructureSlot].InitAsShaderResourceView(0);
         rootParameters[GlobalRootSignatureParams::SceneConstantSlot].InitAsConstantBufferView(0);
         rootParameters[GlobalRootSignatureParams::VertexBuffersSlot].InitAsDescriptorTable(1, &ranges[1]);
+        rootParameters[GlobalRootSignatureParams::TextureSlot].InitAsDescriptorTable(1, &textureRange);
         CD3DX12_ROOT_SIGNATURE_DESC globalRootSignatureDesc(ARRAYSIZE(rootParameters), rootParameters);
         SerializeAndCreateRaytracingRootSignature(globalRootSignatureDesc, &m_raytracingGlobalRootSignature);
     }
@@ -220,7 +225,6 @@ void D3D12RaytracingSimpleLighting::CreateRootSignatures()
     {
         CD3DX12_ROOT_PARAMETER rootParameters[LocalRootSignatureParams::Count];
         rootParameters[LocalRootSignatureParams::CubeConstantSlot].InitAsConstants(SizeOfInUint32(m_cubeCB), 1);
-        rootParameters[LocalRootSignatureParams::CubeTextureSlot].InitAsShaderResourceView();
         CD3DX12_ROOT_SIGNATURE_DESC localRootSignatureDesc(ARRAYSIZE(rootParameters), rootParameters);
         localRootSignatureDesc.Flags = D3D12_ROOT_SIGNATURE_FLAG_LOCAL_ROOT_SIGNATURE;
         SerializeAndCreateRaytracingRootSignature(localRootSignatureDesc, &m_raytracingLocalRootSignature);
@@ -356,9 +360,10 @@ void D3D12RaytracingSimpleLighting::CreateDescriptorHeap()
 
     D3D12_DESCRIPTOR_HEAP_DESC descriptorHeapDesc = {};
     // Allocate a heap for 3 descriptors:
-    // 2 - vertex and index buffer SRVs
-    // 1 - raytracing output texture SRV
-    descriptorHeapDesc.NumDescriptors = 3; 
+    // 3 - Texture SRV[1]
+    // 2 - vertex and index buffer SRVs[2]
+    // 1 - raytracing output texture SRV[1]
+    descriptorHeapDesc.NumDescriptors = 4; 
     descriptorHeapDesc.Type = D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV;
     descriptorHeapDesc.Flags = D3D12_DESCRIPTOR_HEAP_FLAG_SHADER_VISIBLE;
     descriptorHeapDesc.NodeMask = 0;
