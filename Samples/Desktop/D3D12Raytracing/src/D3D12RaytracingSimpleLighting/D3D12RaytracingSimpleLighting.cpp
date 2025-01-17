@@ -176,7 +176,10 @@ void D3D12RaytracingSimpleLighting::CreateTextureResource(ImageLoader::ImageData
     ThrowIfFailed(device->CreateCommittedResource(
         &texHeapProperties,
         D3D12_HEAP_FLAG_NONE,
-        ));
+        &texSRVBufferDesc,
+        D3D12_RESOURCE_STATE_COMMON,
+        nullptr,
+        IID_PPV_ARGS(&m_texture)));
 
 }
 
