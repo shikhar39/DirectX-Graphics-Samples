@@ -152,6 +152,34 @@ void D3D12RaytracingSimpleLighting::CreateConstantBuffers()
     ThrowIfFailed(m_perFrameConstants->Map(0, nullptr, reinterpret_cast<void**>(&m_mappedConstantData)));
 }
 
+void D3D12RaytracingSimpleLighting::CreateTextureResource(ImageLoader::ImageData& texture)
+{
+
+    uint32_t textureStride = texture.width * ((texture.bpp + 7) / 8);
+    uint32_t textureSize = textureStride * texture.height;
+
+    auto device = m_deviceResources->GetD3DDevice();
+    const D3D12_HEAP_PROPERTIES texHeapProperties = CD3DX12_HEAP_PROPERTIES(D3D12_HEAP_TYPE_DEFAULT);
+
+    D3D12_RESOURCE_DESC texSRVBufferDesc{};
+    texSRVBufferDesc.Dimension = D3D12_RESOURCE_DIMENSION_TEXTURE2D;
+    texSRVBufferDesc.Alignment = D3D12_DEFAULT_RESOURCE_PLACEMENT_ALIGNMENT;
+    texSRVBufferDesc.Width = texture.width;
+    texSRVBufferDesc.Height = texture.height;
+    texSRVBufferDesc.DepthOrArraySize = 1;
+    texSRVBufferDesc.MipLevels = 1;
+    texSRVBufferDesc.Format = texture.giPixelFormat;
+    texSRVBufferDesc.SampleDesc.Count = 1;
+    texSRVBufferDesc.SampleDesc.Quality = 0;
+    texSRVBufferDesc.Layout = D3D12_TEXTURE_LAYOUT_UNKNOWN;
+    texSRVBufferDesc.Flags = D3D12_RESOURCE_FLAG_NONE;
+    ThrowIfFailed(device->CreateCommittedResource(
+        &texHeapProperties,
+        D3D12_HEAP_FLAG_NONE,
+        ));
+
+}
+
 // Create resources that depend on the device.
 void D3D12RaytracingSimpleLighting::CreateDeviceDependentResources()
 {
@@ -363,6 +391,7 @@ void D3D12RaytracingSimpleLighting::CreateDescriptorHeap()
     // 3 - Texture SRV[1]
     // 2 - vertex and index buffer SRVs[2]
     // 1 - raytracing output texture SRV[1]
+    // descriptorHeapDesc.NumDescriptors = 3; 
     descriptorHeapDesc.NumDescriptors = 4; 
     descriptorHeapDesc.Type = D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV;
     descriptorHeapDesc.Flags = D3D12_DESCRIPTOR_HEAP_FLAG_SHADER_VISIBLE;
@@ -378,6 +407,10 @@ void D3D12RaytracingSimpleLighting::BuildGeometry()
 {
     auto device = m_deviceResources->GetD3DDevice();
     WavefrontLoader obj("teapot.obj");
+
+    ImageLoader::ImageData textureData;
+    ImageLoader::LoadImageFromDisk("wood_texture.jpg", textureData);
+
     // Cube indices.
     Index indices[] =
     {
@@ -546,7 +579,8 @@ void D3D12RaytracingSimpleLighting::BuildAccelerationStructures()
     auto BuildAccelerationStructure = [&](auto* raytracingCommandList)
     {
         raytracingCommandList->BuildRaytracingAccelerationStructure(&bottomLevelBuildDesc, 0, nullptr);
-        commandList->ResourceBarrier(1, &CD3DX12_RESOURCE_BARRIER::UAV(m_bottomLevelAccelerationStructure.Get()));
+        CD3DX12_RESOURCE_BARRIER uavBarrier = CD3DX12_RESOURCE_BARRIER::UAV(m_bottomLevelAccelerationStructure.Get());
+        commandList->ResourceBarrier(1, &uavBarrier);
         raytracingCommandList->BuildRaytracingAccelerationStructure(&topLevelBuildDesc, 0, nullptr);
     };
 

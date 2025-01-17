@@ -76,6 +76,7 @@
       <CompileAsWinRT>false</CompileAsWinRT>
       <DisableSpecificWarnings>
       </DisableSpecificWarnings>
+      <LanguageStandard>stdcpp20</LanguageStandard>
     </ClCompile>
     <Link>
       <SubSystem>Windows</SubSystem>
@@ -161,6 +162,7 @@
     <ClInclude Include="DeviceResources.h" />
     <ClInclude Include="DirectXRaytracingHelper.h" />
     <ClInclude Include="HlslCompat.h" />
+    <ClInclude Include="ImageLoader.h" />
     <ClInclude Include="RaytracingHlslCompat.h" />
     <ClInclude Include="StepTimer.h" />
     <ClInclude Include="WavefrontLoader.h" />
@@ -173,6 +175,9 @@
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="DeviceResources.cpp" />
+    <ClCompile Include="ImageLoader.cpp">
+      <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">NotUsing</PrecompiledHeader>
+    </ClCompile>
     <ClCompile Include="WavefrontLoader.cpp" />
     <ClCompile Include="Win32Application.cpp" />
     <ClCompile Include="D3D12RaytracingSimpleLighting.cpp" />

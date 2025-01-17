@@ -14,6 +14,7 @@
 #include "DXSample.h"
 #include "StepTimer.h"
 #include "RaytracingHlslCompat.h"
+#include "ImageLoader.h"
 
 namespace GlobalRootSignatureParams {
     enum Value {
@@ -107,6 +108,9 @@ private:
     D3D12_GPU_DESCRIPTOR_HANDLE m_raytracingOutputResourceUAVGpuDescriptor;
     UINT m_raytracingOutputResourceUAVDescriptorHeapIndex;
 
+    // Texture
+    ComPtr<ID3D12Resource> m_texture;
+
     // Shader tables
     static const wchar_t* c_hitGroupName;
     static const wchar_t* c_raygenShaderName;
@@ -132,6 +136,7 @@ private:
     void RecreateD3D();
     void DoRaytracing();
     void CreateConstantBuffers();
+    void CreateTextureResource(ImageLoader::ImageData &texture);
     void CreateDeviceDependentResources();
     void CreateWindowSizeDependentResources();
     void ReleaseDeviceDependentResources();
