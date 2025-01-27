@@ -20,6 +20,9 @@ RWTexture2D<float4> RenderTarget : register(u0);
 ByteAddressBuffer Indices : register(t1, space0);
 StructuredBuffer<Vertex> Vertices : register(t2, space0);
 
+Texture2D<float4> texture : register(t3);
+SamplerState textureSampler : register(s0);
+
 ConstantBuffer<SceneConstantBuffer> g_sceneCB : register(b0);
 ConstantBuffer<CubeConstantBuffer> g_cubeCB : register(b1);
 
@@ -64,7 +67,9 @@ struct RayPayload
 // Retrieve hit world position.
 float3 HitWorldPosition()
 {
-    return WorldRayOrigin() + RayTCurrent() * WorldRayDirection();
+    float3 objectHitPosition = WorldRayOrigin() + RayTCurrent() * WorldRayDirection();
+    return mul(float4(objectHitPosition, 1.0f), ObjectToWorld4x3()).xyz;
+
 }
 
 // Retrieve attribute at a hit position interpolated from vertex attributes using the hit's barycentrics.
@@ -152,10 +157,21 @@ void MyClosestHitShader(inout RayPayload payload, in MyAttributes attr)
     // Compute the triangle's normal.
     // This is redundant and done for illustration purposes 
     // as all the per-vertex normals are the same and match triangle's normal in this sample. 
-    float3 triangleNormal = HitAttribute(vertexNormals, attr);
-
+    // float3 triangleNormal = HitAttribute(vertexNormals, attr);
+    
+    float3 triangleNormal =     Vertices[indices[0]].normal +
+        attr.barycentrics.x * ( Vertices[indices[1]].normal - Vertices[indices[0]].normal) +
+        attr.barycentrics.y * ( Vertices[indices[2]].normal - Vertices[indices[0]].normal);
+    
+    float2 triangleUV =         Vertices[indices[0]].uvs +
+        attr.barycentrics.x * ( Vertices[indices[1]].uvs - Vertices[indices[0]].uvs ) +
+        attr.barycentrics.y * ( Vertices[indices[2]].uvs - Vertices[indices[0]].uvs );
+    
+    
     float4 diffuseColor = CalculateDiffuseLighting(hitPosition, triangleNormal);
-    float4 color = g_sceneCB.lightAmbientColor + diffuseColor;
+    //float4 texColor = texture.Sample(textureSampler, triangleUV);
+    float4 texColor = texture.SampleLevel(textureSampler, triangleUV, 0.0f);
+    float4 color = g_sceneCB.lightAmbientColor + diffuseColor + texColor ;
 
     payload.color = color;
 }

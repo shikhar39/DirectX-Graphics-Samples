@@ -103,13 +103,16 @@ private:
     ComPtr<ID3D12Resource> m_bottomLevelAccelerationStructure;
     ComPtr<ID3D12Resource> m_topLevelAccelerationStructure;
 
+    // Acceleration Structure builder
+    D3D12_BUILD_RAYTRACING_ACCELERATION_STRUCTURE_DESC m_topLevelBuildDesc;
+
     // Raytracing output
     ComPtr<ID3D12Resource> m_raytracingOutput;
     D3D12_GPU_DESCRIPTOR_HANDLE m_raytracingOutputResourceUAVGpuDescriptor;
     UINT m_raytracingOutputResourceUAVDescriptorHeapIndex;
 
     // Texture
-    ComPtr<ID3D12Resource> m_texture;
+    D3DBuffer m_texture;
 
     // Shader tables
     static const wchar_t* c_hitGroupName;
@@ -129,6 +132,8 @@ private:
     bool m_mouseClicked;
     UINT m_oldMouseXPosition;
     UINT m_oldMouseYPosition;
+    float m_objDistance = 0.0f;
+    float m_objDistDelta = 0.2f;
 
 
     void UpdateCameraMatrices();

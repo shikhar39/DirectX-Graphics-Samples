@@ -9,10 +9,10 @@ const std::vector<ImageLoader::GUID_to_DXGI> ImageLoader::s_lookupTable =
 
 bool ImageLoader::LoadImageFromDisk(const std::filesystem::path& imagePath, ImageData& data)
 {
-    
+    CoInitializeEx(nullptr , COINIT_MULTITHREADED);
     ComPtr<IWICImagingFactory> wicFactory;
     __ImageLoader_CAR(
-        CoCreateInstance(CLSID_WICImagingFactory, nullptr, CLSCTX_INPROC_SERVER, IID_PPV_ARGS(&wicFactory))
+      CoCreateInstance(CLSID_WICImagingFactory, nullptr, CLSCTX_INPROC_SERVER, IID_PPV_ARGS(&wicFactory))
     );
 
     ComPtr<IWICStream> wicFileStream;
