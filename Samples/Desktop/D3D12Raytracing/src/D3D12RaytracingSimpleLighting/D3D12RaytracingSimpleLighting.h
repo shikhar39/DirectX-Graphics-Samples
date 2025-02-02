@@ -15,12 +15,14 @@
 #include "StepTimer.h"
 #include "RaytracingHlslCompat.h"
 #include "ImageLoader.h"
+#include "Model.h"
 
 namespace GlobalRootSignatureParams {
     enum Value {
         OutputViewSlot = 0,
         AccelerationStructureSlot,
         SceneConstantSlot,
+        IndexBuffersSlot,
         VertexBuffersSlot,
         TextureSlot,
         Count 
@@ -56,7 +58,10 @@ public:
     virtual void OnMouseMove(UINT x, UINT y);
     virtual void OnLeftButtonDown(UINT x, UINT y);
     virtual void OnLeftButtonUp(UINT x, UINT y);
+    virtual void OnKeyDown(UINT8 key);
+    virtual void OnKeyUp(UINT8 key);
 
+    
 private:
     static const UINT FrameCount = 3;
 
@@ -80,27 +85,34 @@ private:
     ComPtr<ID3D12RootSignature> m_raytracingGlobalRootSignature;
     ComPtr<ID3D12RootSignature> m_raytracingLocalRootSignature;
 
+    enum BufferType {
+        IndexBufferSRV = 0,
+        VertexBufferSRV,
+        TextureSRV
+    };
+
+
     // Descriptors
-    ComPtr<ID3D12DescriptorHeap> m_descriptorHeap;
-    UINT m_descriptorsAllocated;
-    UINT m_descriptorSize;
-    
+    struct DescriptorHeap {
+        ComPtr<ID3D12DescriptorHeap> DescriptorHeap;
+        UINT DescriptorsAllocated;
+        UINT DescriptorIncrementSize;
+    } m_descHeap, m_IndexBufferDescHeap, m_VertexBufferDescHeap, m_TextureBufferDescHeap;
+
     // Raytracing scene
     SceneConstantBuffer m_sceneCB[FrameCount];
     CubeConstantBuffer m_cubeCB;
 
     // Geometry
-    struct D3DBuffer
-    {
-        ComPtr<ID3D12Resource> resource;
-        D3D12_CPU_DESCRIPTOR_HANDLE cpuDescriptorHandle;
-        D3D12_GPU_DESCRIPTOR_HANDLE gpuDescriptorHandle;
-    };
-    D3DBuffer m_indexBuffer;
-    D3DBuffer m_vertexBuffer;
+    // D3DBuffer m_indexBuffer;
+    // D3DBuffer m_vertexBuffer;
+
+    std::vector<Model> m_models;
+    UINT16 m_numObjects = 1;
+
 
     // Acceleration structure
-    ComPtr<ID3D12Resource> m_bottomLevelAccelerationStructure;
+    //  ComPtr<ID3D12Resource> m_bottomLevelAccelerationStructure;
     ComPtr<ID3D12Resource> m_topLevelAccelerationStructure;
 
     // Acceleration Structure builder
@@ -112,36 +124,51 @@ private:
     UINT m_raytracingOutputResourceUAVDescriptorHeapIndex;
 
     // Texture
-    D3DBuffer m_texture;
+    // D3DBuffer m_texture;
 
     // Shader tables
     static const wchar_t* c_hitGroupName;
     static const wchar_t* c_raygenShaderName;
     static const wchar_t* c_closestHitShaderName;
     static const wchar_t* c_missShaderName;
+
+    static const wchar_t* c_shadowHitGroupName;
+    static const wchar_t* c_shadowMissShaderName;
+    static const wchar_t* c_shadowAnyHitShaderName;
+    
     ComPtr<ID3D12Resource> m_missShaderTable;
     ComPtr<ID3D12Resource> m_hitGroupShaderTable;
     ComPtr<ID3D12Resource> m_rayGenShaderTable;
     
     // Application state
     StepTimer m_timer;
+    bool m_animationPaused = true;
+    UINT m_oldMouseXPosition;
+    UINT m_oldMouseYPosition;
+    float m_objDistance = 5.0f;
+    float m_objDistDelta = 0.2f;
+
+    // Input state Variables
+    bool m_mouseClicked;
+    bool m_keyWPressed;
+    bool m_keySPressed;
+    bool m_keyAPressed;
+    bool m_keyDPressed; // :(
+
+    // Camera Properties
+    float m_cameraMoveSpeed = 0.5f;
     float m_curRotationAngleRad;
+    XMVECTOR m_viewDir;
     XMVECTOR m_eye;
     XMVECTOR m_at;
     XMVECTOR m_up;
-    bool m_mouseClicked;
-    UINT m_oldMouseXPosition;
-    UINT m_oldMouseYPosition;
-    float m_objDistance = 0.0f;
-    float m_objDistDelta = 0.2f;
-
 
     void UpdateCameraMatrices();
     void InitializeScene();
     void RecreateD3D();
     void DoRaytracing();
     void CreateConstantBuffers();
-    void CreateTextureResource(ImageLoader::ImageData &texture);
+    void CreateTextureResource(ImageLoader::ImageData &texture, Model::D3DBuffer* texBuffer);
     void CreateDeviceDependentResources();
     void CreateWindowSizeDependentResources();
     void ReleaseDeviceDependentResources();
@@ -155,10 +182,16 @@ private:
     void CreateRaytracingOutputResource();
     void BuildGeometry();
     void BuildAccelerationStructures();
+    void UpdateAccelerationStructure();
+    void InitImGui();
+    void RenderImGui();
     void BuildShaderTables();
     void UpdateForSizeChange(UINT clientWidth, UINT clientHeight);
     void CopyRaytracingOutputToBackbuffer();
     void CalculateFrameStats();
-    UINT AllocateDescriptor(D3D12_CPU_DESCRIPTOR_HANDLE* cpuDescriptor, UINT descriptorIndexToUse = UINT_MAX);
-    UINT CreateBufferSRV(D3DBuffer* buffer, UINT numElements, UINT elementSize);
+    UINT AllocateDescriptor(D3D12_CPU_DESCRIPTOR_HANDLE* cpuDescriptor, DescriptorHeap* descHeap, UINT descriptorIndexToUse = UINT_MAX);
+    UINT CreateBufferSRV(Model::D3DBuffer* buffer, DescriptorHeap* descHeap, UINT numElements, UINT elementSize);
+
+
+
 };

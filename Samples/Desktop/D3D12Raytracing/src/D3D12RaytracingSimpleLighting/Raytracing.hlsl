@@ -17,10 +17,11 @@
 
 RaytracingAccelerationStructure Scene : register(t0, space0);
 RWTexture2D<float4> RenderTarget : register(u0);
-ByteAddressBuffer Indices : register(t1, space0);
-StructuredBuffer<Vertex> Vertices : register(t2, space0);
+ByteAddressBuffer Indices[] : register(t1, space0);
+StructuredBuffer<Vertex> Vertices[] : register(t2, space0);
+// ByteAddressBuffer Vertices[] : register(t2, space0);
 
-Texture2D<float4> texture : register(t3);
+Texture2D<float4> textures[] : register(t3);
 SamplerState textureSampler : register(s0);
 
 ConstantBuffer<SceneConstantBuffer> g_sceneCB : register(b0);
@@ -39,7 +40,7 @@ uint3 Load3x16BitIndices(uint offsetBytes)
     //  Aligned:     { 0 1 | 2 - }
     //  Not aligned: { - 0 | 1 2 }
     const uint dwordAlignedOffset = offsetBytes & ~3;    
-    const uint2 four16BitIndices = Indices.Load2(dwordAlignedOffset);
+    const uint2 four16BitIndices = Indices[InstanceID()].Load2(dwordAlignedOffset);
  
     // Aligned: { 0 1 | 2 - } => retrieve first three 16bit indices
     if (dwordAlignedOffset == offsetBytes)
@@ -62,6 +63,11 @@ typedef BuiltInTriangleIntersectionAttributes MyAttributes;
 struct RayPayload
 {
     float4 color;
+};
+
+struct ShadowRayPayload
+{
+    float shadowFactor;
 };
 
 // Retrieve hit world position.
@@ -108,6 +114,7 @@ float4 CalculateDiffuseLighting(float3 hitPosition, float3 normal)
     return g_cubeCB.albedo * g_sceneCB.lightDiffuseColor * fNDotL;
 }
 
+
 [shader("raygeneration")]
 void MyRaygenShader()
 {
@@ -133,11 +140,25 @@ void MyRaygenShader()
     RenderTarget[DispatchRaysIndex().xy] = payload.color;
 }
 
+[shader("anyhit")]
+void ShadowRayAnyHitShader(inout ShadowRayPayload payload, in MyAttributes attr)
+{
+    payload.shadowFactor = 0.0f;
+    AcceptHitAndEndSearch();
+}
+
+[shader("miss")]
+void ShadowRayMissShader(inout ShadowRayPayload payload)
+{
+    payload.shadowFactor = 1.0f;;
+}
+
 [shader("closesthit")]
 void MyClosestHitShader(inout RayPayload payload, in MyAttributes attr)
 {
+    /*
     float3 hitPosition = HitWorldPosition();
-
+    uint i = InstanceID();
     // Get the base index of the triangle's first 16 bit index.
     uint indexSizeInBytes = 2;
     uint indicesPerTriangle = 3;
@@ -149,9 +170,9 @@ void MyClosestHitShader(inout RayPayload payload, in MyAttributes attr)
 
     // Retrieve corresponding vertex normals for the triangle vertices.
     float3 vertexNormals[3] = { 
-        Vertices[indices[0]].normal, 
-        Vertices[indices[1]].normal, 
-        Vertices[indices[2]].normal 
+        Vertices[i][indices[0]].normal, 
+        Vertices[i][indices[1]].normal,
+        Vertices[i][indices[2]].normal 
     };
 
     // Compute the triangle's normal.
@@ -159,21 +180,35 @@ void MyClosestHitShader(inout RayPayload payload, in MyAttributes attr)
     // as all the per-vertex normals are the same and match triangle's normal in this sample. 
     // float3 triangleNormal = HitAttribute(vertexNormals, attr);
     
-    float3 triangleNormal =     Vertices[indices[0]].normal +
-        attr.barycentrics.x * ( Vertices[indices[1]].normal - Vertices[indices[0]].normal) +
-        attr.barycentrics.y * ( Vertices[indices[2]].normal - Vertices[indices[0]].normal);
+    float3 triangleNormal =     Vertices[i][indices[0]].normal +
+        attr.barycentrics.x * ( Vertices[i][indices[1]].normal - Vertices[i][indices[0]].normal) +
+        attr.barycentrics.y * ( Vertices[i][indices[2]].normal - Vertices[i][indices[0]].normal);
     
-    float2 triangleUV =         Vertices[indices[0]].uvs +
-        attr.barycentrics.x * ( Vertices[indices[1]].uvs - Vertices[indices[0]].uvs ) +
-        attr.barycentrics.y * ( Vertices[indices[2]].uvs - Vertices[indices[0]].uvs );
+    float2 triangleUV =         Vertices[i][indices[0]].uvs +
+        attr.barycentrics.x * ( Vertices[i][indices[1]].uvs - Vertices[i][indices[0]].uvs) +
+        attr.barycentrics.y * ( Vertices[i][indices[2]].uvs - Vertices[i][indices[0]].uvs);
     
+    RayDesc shadowRay;
+    shadowRay.Origin = hitPosition;
+    shadowRay.Direction = g_sceneCB.lightPosition.xyz - hitPosition;
+    shadowRay.TMin = 0.001;
+    shadowRay.TMax = 1.0;
+    
+    ShadowRayPayload shadowPayload = { 0.0f };
+    if (dot(shadowRay.Direction, triangleNormal) > 0.0f)
+    {
+        ShadowRayPayload shadowPayload = { 1.0f };
+        
+        // TraceRay(Scene, RAY_FLAG_NONE, ~0, 0x01, 0, 0x01, shadowRay, shadowPayload);
+    }
     
     float4 diffuseColor = CalculateDiffuseLighting(hitPosition, triangleNormal);
     //float4 texColor = texture.Sample(textureSampler, triangleUV);
-    float4 texColor = texture.SampleLevel(textureSampler, triangleUV, 0.0f);
-    float4 color = g_sceneCB.lightAmbientColor + diffuseColor + texColor ;
+    float4 texColor = textures[i].SampleLevel(textureSampler, triangleUV, 0.0f);
+    float4 color = g_sceneCB.lightAmbientColor + diffuseColor + texColor * shadowPayload.shadowFactor;
+    */
 
-    payload.color = color;
+    payload.color = float4(1, 1, 1, 1);
 }
 
 [shader("miss")]

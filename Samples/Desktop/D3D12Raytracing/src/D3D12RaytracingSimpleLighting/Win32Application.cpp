@@ -265,7 +265,7 @@ LRESULT CALLBACK Win32Application::WindowProc(HWND hWnd, UINT message, WPARAM wP
         return 0;
 
     case WM_MOUSEMOVE:
-        if (pSample && static_cast<UINT8>(wParam) == MK_LBUTTON)
+        if (pSample)
         {
             UINT x = LOWORD(lParam);
             UINT y = HIWORD(lParam);
