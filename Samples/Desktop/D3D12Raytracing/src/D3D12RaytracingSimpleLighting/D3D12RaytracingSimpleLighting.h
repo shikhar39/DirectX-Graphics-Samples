@@ -93,11 +93,10 @@ private:
 
 
     // Descriptors
-    struct DescriptorHeap {
-        ComPtr<ID3D12DescriptorHeap> DescriptorHeap;
-        UINT DescriptorsAllocated;
-        UINT DescriptorIncrementSize;
-    } m_descHeap, m_IndexBufferDescHeap, m_VertexBufferDescHeap, m_TextureBufferDescHeap;
+    ComPtr<ID3D12DescriptorHeap> m_DescriptorHeap;
+    UINT m_DescriptorsAllocated;
+    UINT m_DescriptorIncrementSize;
+    
 
     // Raytracing scene
     SceneConstantBuffer m_sceneCB[FrameCount];
@@ -168,7 +167,7 @@ private:
     void RecreateD3D();
     void DoRaytracing();
     void CreateConstantBuffers();
-    void CreateTextureResource(ImageLoader::ImageData &texture, Model::D3DBuffer* texBuffer);
+    void CreateTextureResource(ImageLoader::ImageData &texture, Model::D3DBuffer* texBuffer, UINT descriptorIndex);
     void CreateDeviceDependentResources();
     void CreateWindowSizeDependentResources();
     void ReleaseDeviceDependentResources();
@@ -189,8 +188,8 @@ private:
     void UpdateForSizeChange(UINT clientWidth, UINT clientHeight);
     void CopyRaytracingOutputToBackbuffer();
     void CalculateFrameStats();
-    UINT AllocateDescriptor(D3D12_CPU_DESCRIPTOR_HANDLE* cpuDescriptor, DescriptorHeap* descHeap, UINT descriptorIndexToUse = UINT_MAX);
-    UINT CreateBufferSRV(Model::D3DBuffer* buffer, DescriptorHeap* descHeap, UINT numElements, UINT elementSize);
+    UINT AllocateDescriptor(D3D12_CPU_DESCRIPTOR_HANDLE* cpuDescriptor, UINT descriptorIndexToUse = UINT_MAX);
+    UINT CreateBufferSRV(Model::D3DBuffer* buffer, UINT numElements, UINT elementSize, UINT descriptorIndex);
 
 
 
