@@ -102,9 +102,7 @@ void D3D12RaytracingSimpleLighting::UpdateCameraMatrices()
 {
 	auto frameIndex = m_deviceResources->GetCurrentFrameIndex();
 
-	auto transform = XMMatrixRotationRollPitchYaw(m_altAngle, m_azAngle, 0);
-	auto vector = XMVectorSet(1.0f, 0.0f, 0.0f, 1.0f);
-	auto result = XMVector4Transform(vector, transform);
+	m_viewDir = XMVector4Transform(XMVectorSet(0.0f, 0.0f, 1.0f, 0.0f), XMMatrixRotationRollPitchYaw(m_altAngle, m_azAngle, 0));
 
 	m_sceneCB[frameIndex].cameraPosition = m_eye;
 	float fovAngleY = 45.0f;
@@ -130,11 +128,11 @@ void D3D12RaytracingSimpleLighting::InitializeScene()
 	{
 		// Initialize the view and projection inverse matrices.
 		m_eye = { 0.0f, 2.0f, -5.0f, 1.0f };
-		// m_at = { 0.0f, 0.0f, 0.0f, 1.0f };
 		XMVECTOR right = { 1.0f, 0.0f, 0.0f, 0.0f };
 
-		m_viewDir = XMVector4Normalize(XMVECTOR{ 0, 0, 0, 0 } - m_eye);
-		m_up = XMVector3Normalize(XMVector3Cross(m_viewDir, right));
+		m_viewDir = XMVector4Normalize(- m_eye);
+		// m_up = XMVector3Normalize(XMVector3Cross(m_viewDir, right));
+		m_up = { 0.0f, 1.0f, 0.0f, 0.0f };
 		/*
 		// Rotate camera around Y axis.
 		XMMATRIX rotate = XMMatrixRotationY(XMConvertToRadians(45.0f));
@@ -1067,7 +1065,8 @@ void D3D12RaytracingSimpleLighting::OnMouseMove(UINT x, UINT y)
 		int deltaX = x - m_oldMouseXPosition;
 		int deltaY = y - m_oldMouseYPosition;
 		
-		m_altAngle += deltaX;
+		m_azAngle -= deltaX * m_cameraRotateSpeed;
+		m_altAngle -= deltaY * m_cameraRotateSpeed;
 		// Rotate camera around Y axis.
 		/*
 		XMMATRIX rotateY = XMMatrixRotationY(XMConvertToRadians(-deltaX * 0.05));
