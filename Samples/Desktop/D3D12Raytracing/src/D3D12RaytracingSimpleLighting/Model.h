@@ -37,6 +37,5 @@ public:
 	D3DBuffer &GetIndexBuffer() { return m_indexBuffer; }
 	D3DBuffer &GetVertexBuffer() { return m_vertexBuffer; }
 	D3DBuffer &GetTextureBuffer() { return m_textureBuffer; }
-
 };
 

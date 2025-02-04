@@ -142,16 +142,16 @@ void MyRaygenShader()
 }
 
 [shader("anyhit")]
-void ShadowRayAnyHitShader(inout ShadowRayPayload payload, in MyAttributes attr)
+void ShadowRayAnyHitShader(inout ShadowRayPayload shpayload, in MyAttributes attr)
 {
-    payload.shadowFactor = 0.0f;
-    AcceptHitAndEndSearch();
+    shpayload.shadowFactor = 0.0f;
+    // AcceptHitAndEndSearch();
 }
 
 [shader("miss")]
-void ShadowRayMissShader(inout ShadowRayPayload payload)
+void ShadowRayMissShader(inout ShadowRayPayload shpayload)
 {
-    payload.shadowFactor = 1.0f;;
+    shpayload.shadowFactor = 1.0f;;
 }
 
 [shader("closesthit")]
@@ -190,17 +190,16 @@ void MyClosestHitShader(inout RayPayload payload, in MyAttributes attr)
     
     RayDesc shadowRay;
     shadowRay.Origin = hitPosition;
-    shadowRay.Direction = g_sceneCB.lightPosition.xyz - hitPosition;
+    shadowRay.Direction = normalize(g_sceneCB.lightPosition.xyz - hitPosition);
     shadowRay.TMin = 0.001;
-    shadowRay.TMax = 10.0;
+    shadowRay.TMax = 100.0;
     
-    ShadowRayPayload shadowPayload = { 0.0f };
-    float NDotL = max(0.0, dot(normalize(shadowRay.Direction), triangleNormal));
-    if ( NDotL > 0.0f)
+    ShadowRayPayload shadowPayload = { 0.2f };
+    float NDotL = dot(normalize(shadowRay.Direction), triangleNormal);
+    if ( NDotL >= 0.0f)
     {
-        shadowPayload.shadowFactor =  1.0f;
+        TraceRay(Scene, RAY_FLAG_ACCEPT_FIRST_HIT_AND_END_SEARCH, 0xFF, 1, 1, 1, shadowRay, shadowPayload);
         
-        // TraceRay(Scene, RAY_FLAG_NONE, ~0, 0x01, 0, 0x01, shadowRay, shadowPayload);
     }
     
     //float4 diffuseColor = CalculateDiffuseLighting(hitPosition, triangleNormal);

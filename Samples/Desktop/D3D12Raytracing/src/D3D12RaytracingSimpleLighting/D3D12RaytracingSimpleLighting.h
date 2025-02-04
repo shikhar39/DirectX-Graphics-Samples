@@ -142,6 +142,7 @@ private:
     // Application state
     StepTimer m_timer;
     bool m_animationPaused = true;
+    bool m_updateAccelerationStructure = false; 
     UINT m_oldMouseXPosition;
     UINT m_oldMouseYPosition;
     float m_objDistance = 5.0f;

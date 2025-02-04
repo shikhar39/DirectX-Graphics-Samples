@@ -155,9 +155,9 @@ void D3D12RaytracingSimpleLighting::InitializeScene()
 		XMFLOAT4 lightAmbientColor;
 		XMFLOAT4 lightDiffuseColor;
 
-		lightPosition = XMFLOAT4(10.0f, 10.0f, 0.0f, 0.0f);
+		lightPosition = XMFLOAT4(10.0f, 40.0f, 0.0f, 0.0f);
 		m_sceneCB[frameIndex].lightPosition = XMLoadFloat4(&lightPosition);
-		m_models.push_back(Model("cube.obj", "triangles.png", XMMatrixTranslation(lightPosition.x, lightPosition.y, lightPosition.z)));
+		// m_models.push_back(Model("cube.obj", "triangles.png", XMMatrixTranslation(lightPosition.x, lightPosition.y, lightPosition.z)));
 
 		lightAmbientColor = XMFLOAT4(0.15f, 0.15f, 0.15f, 1.0f);
 		m_sceneCB[frameIndex].lightAmbientColor = XMLoadFloat4(&lightAmbientColor);
@@ -558,7 +558,7 @@ void D3D12RaytracingSimpleLighting::BuildAccelerationStructures()
 		// Mark the geometry as opaque. 
 		// PERFORMANCE TIP: mark geometry as opaque whenever applicable as it can enable important ray processing optimizations.
 		// Note: When rays encounter opaque geometry an any hit shader will not be executed whether it is present or not.
-		geometryDesc.Flags = D3D12_RAYTRACING_GEOMETRY_FLAG_OPAQUE;
+		geometryDesc.Flags = D3D12_RAYTRACING_GEOMETRY_FLAG_NONE;
 
 		// Get required sizes for an acceleration structure.
 		
@@ -779,31 +779,6 @@ void D3D12RaytracingSimpleLighting::OnUpdate()
 	auto frameIndex = m_deviceResources->GetCurrentFrameIndex();
 	auto prevFrameIndex = m_deviceResources->GetPreviousFrameIndex();
 
-	// Rotate the camera around Y axis.
-	/*
-	{
-		float secondsToRotateAround = 24.0f;
-		float angleToRotateBy = 360.0f * (elapsedTime / secondsToRotateAround);
-		XMMATRIX rotate = XMMatrixRotationY(XMConvertToRadians(angleToRotateBy));
-		m_eye = XMVector3Transform(m_eye, rotate);
-		m_up = XMVector3Transform(m_up, rotate);
-		m_at = XMVector3Transform(m_at, rotate);
-	}
-
-	// Rotate the second light around Y axis.
-	{
-		float secondsToRotateAround = 24.0f;
-		float angleToRotateBy = -360.0f * (elapsedTime / secondsToRotateAround);
-		XMMATRIX rotate = XMMatrixRotationY(XMConvertToRadians(angleToRotateBy));
-		const XMVECTOR& prevLightPosition = m_sceneCB[prevFrameIndex].lightPosition;
-		m_sceneCB[frameIndex].lightPosition = XMVector3Transform(prevLightPosition, rotate);
-	}
-	if (m_cubeCB.albedo.z >= 1.0) {
-		m_cubeCB.albedo.z = 0.0;
-	}
-	XMStoreFloat4(&m_cubeCB.albedo, XMLoadFloat4(&m_cubeCB.albedo) + XMVECTOR({ 0, 0, 0.01, 0 }));
-	*/
-
 	if (m_keyWPressed) {
 		m_eye = m_eye + m_viewDir * m_cameraMoveSpeed;
 	}
@@ -828,8 +803,9 @@ void D3D12RaytracingSimpleLighting::OnUpdate()
 		}
 		m_objDistance += m_objDistDelta;
 	}
-
-	UpdateAccelerationStructure();
+	if (m_updateAccelerationStructure) {
+		UpdateAccelerationStructure();
+	}
 
 }
 
@@ -846,7 +822,7 @@ void D3D12RaytracingSimpleLighting::DoRaytracing()
 		dispatchDesc->HitGroupTable.StrideInBytes = m_hitGroupShaderTable->GetDesc().Width/2;
 		dispatchDesc->MissShaderTable.StartAddress = m_missShaderTable->GetGPUVirtualAddress();
 		dispatchDesc->MissShaderTable.SizeInBytes = m_missShaderTable->GetDesc().Width;
-		dispatchDesc->MissShaderTable.StrideInBytes = dispatchDesc->MissShaderTable.SizeInBytes/2;
+		dispatchDesc->MissShaderTable.StrideInBytes = m_missShaderTable->GetDesc().Width /2;
 		dispatchDesc->RayGenerationShaderRecord.StartAddress = m_rayGenShaderTable->GetGPUVirtualAddress();
 		dispatchDesc->RayGenerationShaderRecord.SizeInBytes = m_rayGenShaderTable->GetDesc().Width;
 		dispatchDesc->Width = m_width;
