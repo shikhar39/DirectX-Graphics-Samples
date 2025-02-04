@@ -156,10 +156,11 @@ private:
 
     // Camera Properties
     float m_cameraMoveSpeed = 0.5f;
-    float m_curRotationAngleRad;
+    float m_altAngle = 0;
+    float m_azAngle = 0;
+
     XMVECTOR m_viewDir;
     XMVECTOR m_eye;
-    // XMVECTOR m_at;
     XMVECTOR m_up;
 
     void UpdateCameraMatrices();

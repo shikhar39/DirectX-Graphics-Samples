@@ -34,8 +34,7 @@ const wchar_t* D3D12RaytracingSimpleLighting::c_shadowAnyHitShaderName = L"Shado
 
 D3D12RaytracingSimpleLighting::D3D12RaytracingSimpleLighting(UINT width, UINT height, std::wstring name) :
 	DXSample(width, height, name),
-	m_raytracingOutputResourceUAVDescriptorHeapIndex(UINT_MAX),
-	m_curRotationAngleRad(0.0f)
+	m_raytracingOutputResourceUAVDescriptorHeapIndex(UINT_MAX)
 {
 	UpdateForSizeChange(width, height);
 }
@@ -102,6 +101,10 @@ void D3D12RaytracingSimpleLighting::InitImGui() {
 void D3D12RaytracingSimpleLighting::UpdateCameraMatrices()
 {
 	auto frameIndex = m_deviceResources->GetCurrentFrameIndex();
+
+	auto transform = XMMatrixRotationRollPitchYaw(m_altAngle, m_azAngle, 0);
+	auto vector = XMVectorSet(1.0f, 0.0f, 0.0f, 1.0f);
+	auto result = XMVector4Transform(vector, transform);
 
 	m_sceneCB[frameIndex].cameraPosition = m_eye;
 	float fovAngleY = 45.0f;
@@ -1064,16 +1067,18 @@ void D3D12RaytracingSimpleLighting::OnMouseMove(UINT x, UINT y)
 		int deltaX = x - m_oldMouseXPosition;
 		int deltaY = y - m_oldMouseYPosition;
 		
+		m_altAngle += deltaX;
 		// Rotate camera around Y axis.
+		/*
 		XMMATRIX rotateY = XMMatrixRotationY(XMConvertToRadians(-deltaX * 0.05));
 		m_viewDir = XMVector3Transform(m_viewDir, rotateY);
 		m_up = XMVector3Transform(m_up, rotateY);
-
 		// ROtate camera vertically 
 		XMVECTOR axis = XMVector3Cross(m_up, m_viewDir);
 		XMMATRIX rotateX = XMMatrixRotationAxis(axis, XMConvertToRadians(deltaY * 0.05));
 		m_eye = XMVector3Transform(m_eye, rotateX);
 		m_up = XMVector3Transform(m_up, rotateX);
+		*/
 
 		
 		UpdateCameraMatrices();
