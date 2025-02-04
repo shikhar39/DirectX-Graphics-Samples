@@ -28,7 +28,7 @@ public:
 	XMMATRIX transform;
 
 
-	Model(const std::string& objFilename, const std::string& texFileName) :m_objFile(objFilename), m_texFile(texFileName) {};
+	Model(const std::string& objFilename, const std::string& texFileName, XMMATRIX trans) :m_objFile(objFilename), m_texFile(texFileName), transform(trans) {};
 	Model(WavefrontLoader obj, ImageLoader::ImageData *img = nullptr);
 
 	std::string GetOBJFileName() { return m_objFile; }

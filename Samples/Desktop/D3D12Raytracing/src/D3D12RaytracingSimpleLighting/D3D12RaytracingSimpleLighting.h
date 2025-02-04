@@ -159,7 +159,7 @@ private:
     float m_curRotationAngleRad;
     XMVECTOR m_viewDir;
     XMVECTOR m_eye;
-    XMVECTOR m_at;
+    // XMVECTOR m_at;
     XMVECTOR m_up;
 
     void UpdateCameraMatrices();

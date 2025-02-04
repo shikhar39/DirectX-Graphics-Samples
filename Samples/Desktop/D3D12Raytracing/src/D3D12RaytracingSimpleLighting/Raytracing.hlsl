@@ -18,10 +18,10 @@
 RaytracingAccelerationStructure Scene : register(t0, space0);
 RWTexture2D<float4> RenderTarget : register(u0);
 ByteAddressBuffer Indices[] : register(t1, space0);
-StructuredBuffer<Vertex> Vertices[] : register(t2, space0);
+StructuredBuffer<Vertex> Vertices[] : register(t0, space1);
 // ByteAddressBuffer Vertices[] : register(t2, space0);
 
-Texture2D<float4> textures[] : register(t3);
+Texture2D<float4> textures[] : register(t0, space2);
 SamplerState textureSampler : register(s0);
 
 ConstantBuffer<SceneConstantBuffer> g_sceneCB : register(b0);
@@ -74,7 +74,8 @@ struct ShadowRayPayload
 float3 HitWorldPosition()
 {
     float3 objectHitPosition = WorldRayOrigin() + RayTCurrent() * WorldRayDirection();
-    return mul(float4(objectHitPosition, 1.0f), ObjectToWorld4x3()).xyz;
+    return objectHitPosition;
+    // return mul(float4(objectHitPosition, 1.0f), ObjectToWorld4x3()).xyz;
 
 }
 
@@ -156,7 +157,6 @@ void ShadowRayMissShader(inout ShadowRayPayload payload)
 [shader("closesthit")]
 void MyClosestHitShader(inout RayPayload payload, in MyAttributes attr)
 {
-    /*
     float3 hitPosition = HitWorldPosition();
     uint i = InstanceID();
     // Get the base index of the triangle's first 16 bit index.
@@ -192,23 +192,28 @@ void MyClosestHitShader(inout RayPayload payload, in MyAttributes attr)
     shadowRay.Origin = hitPosition;
     shadowRay.Direction = g_sceneCB.lightPosition.xyz - hitPosition;
     shadowRay.TMin = 0.001;
-    shadowRay.TMax = 1.0;
+    shadowRay.TMax = 10.0;
     
     ShadowRayPayload shadowPayload = { 0.0f };
-    if (dot(shadowRay.Direction, triangleNormal) > 0.0f)
+    float NDotL = max(0.0, dot(normalize(shadowRay.Direction), triangleNormal));
+    if ( NDotL > 0.0f)
     {
-        ShadowRayPayload shadowPayload = { 1.0f };
+        shadowPayload.shadowFactor =  1.0f;
         
         // TraceRay(Scene, RAY_FLAG_NONE, ~0, 0x01, 0, 0x01, shadowRay, shadowPayload);
     }
     
-    float4 diffuseColor = CalculateDiffuseLighting(hitPosition, triangleNormal);
+    //float4 diffuseColor = CalculateDiffuseLighting(hitPosition, triangleNormal);
+    
+    float4 diffuseColor = max(0.0, dot(triangleNormal, normalize(g_sceneCB.lightPosition.xyz - hitPosition)));
+    
     //float4 texColor = texture.Sample(textureSampler, triangleUV);
     float4 texColor = textures[i].SampleLevel(textureSampler, triangleUV, 0.0f);
-    float4 color = g_sceneCB.lightAmbientColor + diffuseColor + texColor * shadowPayload.shadowFactor;
+    float4 color = g_sceneCB.lightAmbientColor  + texColor * shadowPayload.shadowFactor;
+    /*
     */
 
-    payload.color = float4(1, 1, 1, 1);
+    payload.color = color;
 }
 
 [shader("miss")]

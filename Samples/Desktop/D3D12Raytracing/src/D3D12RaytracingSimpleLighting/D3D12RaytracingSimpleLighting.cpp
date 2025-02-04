@@ -127,10 +127,10 @@ void D3D12RaytracingSimpleLighting::InitializeScene()
 	{
 		// Initialize the view and projection inverse matrices.
 		m_eye = { 0.0f, 2.0f, -5.0f, 1.0f };
-		m_at = { 0.0f, 0.0f, 0.0f, 1.0f };
+		// m_at = { 0.0f, 0.0f, 0.0f, 1.0f };
 		XMVECTOR right = { 1.0f, 0.0f, 0.0f, 0.0f };
 
-		m_viewDir = XMVector4Normalize(m_at - m_eye);
+		m_viewDir = XMVector4Normalize(XMVECTOR{ 0, 0, 0, 0 } - m_eye);
 		m_up = XMVector3Normalize(XMVector3Cross(m_viewDir, right));
 		/*
 		// Rotate camera around Y axis.
@@ -142,8 +142,8 @@ void D3D12RaytracingSimpleLighting::InitializeScene()
 		UpdateCameraMatrices();
 	}
 
-	m_models.push_back(Model("teapot.obj", "triangles.png"));
-	m_models.push_back(Model("teapot.obj", "triangles.png"));
+	m_models.push_back(Model("teapot.obj", "triangles.png", XMMatrixTranslation(0.0, 2.0, 0.0)));
+	m_models.push_back(Model("cube.obj", "triangles.png", XMMatrixScaling(50, 5, 50) * XMMatrixTranslation(0.0, -2.0, 0.0)));
 
 
 
@@ -154,8 +154,9 @@ void D3D12RaytracingSimpleLighting::InitializeScene()
 		XMFLOAT4 lightAmbientColor;
 		XMFLOAT4 lightDiffuseColor;
 
-		lightPosition = XMFLOAT4(10.0f, 10.0f, 40.0f, 0.0f);
+		lightPosition = XMFLOAT4(10.0f, 10.0f, 0.0f, 0.0f);
 		m_sceneCB[frameIndex].lightPosition = XMLoadFloat4(&lightPosition);
+		m_models.push_back(Model("cube.obj", "triangles.png", XMMatrixTranslation(lightPosition.x, lightPosition.y, lightPosition.z)));
 
 		lightAmbientColor = XMFLOAT4(0.15f, 0.15f, 0.15f, 1.0f);
 		m_sceneCB[frameIndex].lightAmbientColor = XMLoadFloat4(&lightAmbientColor);
@@ -239,8 +240,7 @@ void D3D12RaytracingSimpleLighting::SerializeAndCreateRaytracingRootSignature(D3
 	ComPtr<ID3DBlob> blob;
 	ComPtr<ID3DBlob> error;
 
-	auto result = D3D12SerializeRootSignature(&desc, D3D_ROOT_SIGNATURE_VERSION_1, &blob, &error);
-	// ThrowIfFailed(, error ? static_cast<wchar_t*>(error->GetBufferPointer()) : nullptr);
+	ThrowIfFailed( D3D12SerializeRootSignature(&desc, D3D_ROOT_SIGNATURE_VERSION_1, &blob, &error), error ? static_cast<wchar_t*>(error->GetBufferPointer()) : nullptr);
 	ThrowIfFailed(device->CreateRootSignature(1, blob->GetBufferPointer(), blob->GetBufferSize(), IID_PPV_ARGS(&(*rootSig))));
 }
 
@@ -253,9 +253,9 @@ void D3D12RaytracingSimpleLighting::CreateRootSignatures()
 	{
 		CD3DX12_DESCRIPTOR_RANGE ranges[4]; // Perfomance TIP: Order from most frequent to least frequent.
 		ranges[0].Init(D3D12_DESCRIPTOR_RANGE_TYPE_UAV, 1, 0);  // 1 output texture
-		ranges[1].Init(D3D12_DESCRIPTOR_RANGE_TYPE_SRV, m_models.size(), 1);  // Index Buffer
-		ranges[2].Init(D3D12_DESCRIPTOR_RANGE_TYPE_SRV, m_models.size(), 2);  // Vertex Buffers
-		ranges[3].Init(D3D12_DESCRIPTOR_RANGE_TYPE_SRV, m_models.size(), 3);  // Texture Buffers
+		ranges[1].Init(D3D12_DESCRIPTOR_RANGE_TYPE_SRV, m_models.size(), 1);  // Index Buffer, t0 is for acceleration structure
+		ranges[2].Init(D3D12_DESCRIPTOR_RANGE_TYPE_SRV, m_models.size(), 0, 1);  // Vertex Buffers
+		ranges[3].Init(D3D12_DESCRIPTOR_RANGE_TYPE_SRV, m_models.size(), 0, 2);  // Texture Buffers
 		// ranges[2].Init(D3D12_DESCRIPTOR_RANGE_TYPE_SRV, 1, 3);  // texture to be mapped on the object
 
 		// CD3DX12_DESCRIPTOR_RANGE textureRange;
@@ -750,9 +750,9 @@ void D3D12RaytracingSimpleLighting::UpdateAccelerationStructure() {
 		XMStoreFloat3x4(&transform3x4, transform1);
 
 
-		// instanceDesc[i].InstanceID = i;
-		// instanceDesc[i].InstanceMask = 1;
-		// instanceDesc[i].AccelerationStructure = model.BottomLevelAccelerationStructure->GetGPUVirtualAddress();
+		instanceDesc[i].InstanceID = i;
+		instanceDesc[i].InstanceMask = 1;
+		instanceDesc[i].AccelerationStructure = model.BottomLevelAccelerationStructure->GetGPUVirtualAddress();
 		memcpy(instanceDesc[i].Transform, &transform3x4, sizeof(instanceDesc[i].Transform));
 
 	}
