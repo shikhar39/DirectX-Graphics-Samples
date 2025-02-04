@@ -145,6 +145,7 @@ void D3D12RaytracingSimpleLighting::InitializeScene()
 
 	m_models.push_back(Model("teapot.obj", "triangles.png", XMMatrixTranslation(0.0, 2.0, 0.0)));
 	m_models.push_back(Model("cube.obj", "triangles.png", XMMatrixScaling(50, 5, 50) * XMMatrixTranslation(0.0, -2.0, 0.0)));
+	m_models.push_back(Model("cube.obj", "triangles.png", XMMatrixScaling(5, 5, 5) * XMMatrixTranslation(10.0, 5.0, -10.0)));
 
 
 

@@ -196,7 +196,7 @@ void MyClosestHitShader(inout RayPayload payload, in MyAttributes attr)
     
     ShadowRayPayload shadowPayload = { 0.2f };
     float NDotL = dot(normalize(shadowRay.Direction), triangleNormal);
-    if ( NDotL >= 0.0f)
+    if ( NDotL > 0.1f)
     {
         TraceRay(Scene, RAY_FLAG_ACCEPT_FIRST_HIT_AND_END_SEARCH, 0xFF, 1, 1, 1, shadowRay, shadowPayload);
         
@@ -208,7 +208,8 @@ void MyClosestHitShader(inout RayPayload payload, in MyAttributes attr)
     
     //float4 texColor = texture.Sample(textureSampler, triangleUV);
     float4 texColor = textures[i].SampleLevel(textureSampler, triangleUV, 0.0f);
-    float4 color = g_sceneCB.lightAmbientColor  + texColor * shadowPayload.shadowFactor;
+    // float4 color = g_sceneCB.lightAmbientColor  + texColor * shadowPayload.shadowFactor;
+    float4 color = texColor * shadowPayload.shadowFactor;
     /*
     */
 
