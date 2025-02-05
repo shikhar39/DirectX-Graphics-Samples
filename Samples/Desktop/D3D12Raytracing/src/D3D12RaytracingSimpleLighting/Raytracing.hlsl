@@ -14,6 +14,8 @@
 
 #define HLSL
 #include "RaytracingHlslCompat.h"
+#include "hlslUtils.hlsli"
+
 
 RaytracingAccelerationStructure Scene : register(t0, space0);
 RWTexture2D<float4> RenderTarget : register(u0);
@@ -69,6 +71,45 @@ struct ShadowRayPayload
 {
     float shadowFactor;
 };
+struct Triangle
+{
+    float4 v0;
+    float4 v1;
+    float4 v2;
+};
+
+// Möller–Trumbore ray-triangle intersection test
+bool IntersectRayTriangle(RayDesc ray, Triangle tri, out float t)
+{
+    const float EPSILON = 1e-5f;
+
+    float3 edge1 = tri.v1 - tri.v0;
+    float3 edge2 = tri.v2 - tri.v0;
+
+    float3 h = cross(ray.Direction, edge2);
+    float a = dot(edge1, h);
+
+    if (abs(a) < EPSILON)
+        return false; // Ray is parallel to the triangle
+
+    float f = 1.0f / a;
+    float3 s = ray.Origin - tri.v0.xyz;
+    float u = f * dot(s, h);
+
+    if (u < 0.0f || u > 1.0f)
+        return false;
+
+    float3 q = cross(s, edge1);
+    float v = f * dot(ray.Direction, q);
+
+    if (v < 0.0f || (u + v) > 1.0f)
+        return false;
+
+    // Compute intersection distance
+    t = f * dot(edge2, q);
+    return t > EPSILON;
+}
+
 
 // Retrieve hit world position.
 float3 HitWorldPosition()
@@ -135,7 +176,29 @@ void MyRaygenShader()
     ray.TMin = 0.001;
     ray.TMax = 10000.0;
     RayPayload payload = { float4(0, 0, 0, 0) };
-    TraceRay(Scene, RAY_FLAG_NONE, ~0, 0, 1, 0, ray, payload);
+    /*
+    */
+    Triangle light1;
+    light1.v0 = g_sceneCB.v1;
+    light1.v1 = g_sceneCB.v2;
+    light1.v2 = g_sceneCB.v3;
+    
+    Triangle light2;
+    light2.v0 = g_sceneCB.v1;
+    light2.v1 = g_sceneCB.v2;
+    light2.v2 = g_sceneCB.v4;
+    
+    float t;
+    
+    if (!(IntersectRayTriangle(ray, light1, t) | IntersectRayTriangle(ray, light2, t)))
+    {
+        TraceRay(Scene, RAY_FLAG_NONE, ~0, 0, 1, 0, ray, payload);
+    }
+    else
+    {
+        payload.color = float4(1, 1, 1, 1);
+
+    }
 
     // Write the raytraced color to the output texture.
     RenderTarget[DispatchRaysIndex().xy] = payload.color;
@@ -151,7 +214,7 @@ void ShadowRayAnyHitShader(inout ShadowRayPayload shpayload, in MyAttributes att
 [shader("miss")]
 void ShadowRayMissShader(inout ShadowRayPayload shpayload)
 {
-    shpayload.shadowFactor = 1.0f;;
+    shpayload.shadowFactor = 1.0f/64;
 }
 
 [shader("closesthit")]
@@ -188,28 +251,58 @@ void MyClosestHitShader(inout RayPayload payload, in MyAttributes attr)
         attr.barycentrics.x * ( Vertices[i][indices[1]].uvs - Vertices[i][indices[0]].uvs) +
         attr.barycentrics.y * ( Vertices[i][indices[2]].uvs - Vertices[i][indices[0]].uvs);
     
-    RayDesc shadowRay;
-    shadowRay.Origin = hitPosition;
-    shadowRay.Direction = normalize(g_sceneCB.lightPosition.xyz - hitPosition);
-    shadowRay.TMin = 0.001;
-    shadowRay.TMax = 100.0;
+    Triangle light1;
+    light1.v0 = g_sceneCB.v1;
+    light1.v1 = g_sceneCB.v2;
+    light1.v2 = g_sceneCB.v3;
     
-    ShadowRayPayload shadowPayload = { 0.2f };
-    float NDotL = dot(normalize(shadowRay.Direction), triangleNormal);
-    if ( NDotL > 0.1f)
+    Triangle light2;
+    light2.v0 = g_sceneCB.v1;
+    light2.v1 = g_sceneCB.v2;
+    light2.v2 = g_sceneCB.v4;
+    float totalShadowFactor = 0.0f;
+    uint seed = initRand(DispatchRaysIndex().x, DispatchRaysIndex().y);
+    for (int k = 0; k < 64; k++)
     {
-        TraceRay(Scene, RAY_FLAG_ACCEPT_FIRST_HIT_AND_END_SEARCH, 0xFF, 1, 1, 1, shadowRay, shadowPayload);
+        float x1 = nextRand(seed);
+        float x2 = nextRand(seed);
+        float3 pointOnLight = g_sceneCB.v1 + x1 * (g_sceneCB.v3 - g_sceneCB.v1) + x2 * (g_sceneCB.v4 - g_sceneCB.v1);
+        float3 hitPointToLight = normalize(pointOnLight - hitPosition);
         
+        RayDesc shadowRay;
+        shadowRay.Origin = hitPosition;
+        shadowRay.TMin = 0.001;
+        shadowRay.TMax = 100.0;
+        shadowRay.Direction = hitPointToLight;
+        
+        ShadowRayPayload shadowPayload = { 0.0f };
+        float NDotL = dot(normalize(shadowRay.Direction), triangleNormal);
+        if ( NDotL > 0.1f)
+        {
+            TraceRay(Scene, RAY_FLAG_ACCEPT_FIRST_HIT_AND_END_SEARCH, 0xFF, 1, 1, 1, shadowRay, shadowPayload);
+        
+        }
+        totalShadowFactor += shadowPayload.shadowFactor;
     }
+    
+    
+    
     
     //float4 diffuseColor = CalculateDiffuseLighting(hitPosition, triangleNormal);
     
-    float4 diffuseColor = max(0.0, dot(triangleNormal, normalize(g_sceneCB.lightPosition.xyz - hitPosition)));
+    float diffuseFactor = max(0.0, dot(triangleNormal, normalize(g_sceneCB.lightPosition.xyz - hitPosition)));
     
     //float4 texColor = texture.Sample(textureSampler, triangleUV);
     float4 texColor = textures[i].SampleLevel(textureSampler, triangleUV, 0.0f);
-    // float4 color = g_sceneCB.lightAmbientColor  + texColor * shadowPayload.shadowFactor;
-    float4 color = texColor * shadowPayload.shadowFactor;
+    if (dot(g_sceneCB.cameraPosition.xyz - hitPosition, triangleNormal) < 0.0)
+    {
+        totalShadowFactor = 0.0f;
+
+    }
+    float4 color = texColor * (g_sceneCB.lightAmbientColor + totalShadowFactor * diffuseFactor * g_sceneCB.lightDiffuseColor);
+    //float4 color = texColor * shadowPayload.shadowFactor;
+    
+    
     /*
     */
 

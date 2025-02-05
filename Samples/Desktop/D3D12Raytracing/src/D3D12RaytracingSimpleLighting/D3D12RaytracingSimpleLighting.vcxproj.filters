@@ -161,9 +161,6 @@
     </None>
   </ItemGroup>
   <ItemGroup>
-    <FxCompile Include="Raytracing.hlsl" />
-  </ItemGroup>
-  <ItemGroup>
     <Text Include="Cube.txt">
       <Filter>Assets\Models</Filter>
     </Text>
@@ -172,5 +169,13 @@
     <Natvis Include="imgui-docking\misc\debuggers\imgui.natvis">
       <Filter>Imgui</Filter>
     </Natvis>
+  </ItemGroup>
+  <ItemGroup>
+    <FxCompile Include="Raytracing.hlsl">
+      <Filter>Assets\Shaders</Filter>
+    </FxCompile>
+    <FxCompile Include="hlslUtils.hlsli">
+      <Filter>Assets\Shaders\Util</Filter>
+    </FxCompile>
   </ItemGroup>
 </Project>

@@ -156,14 +156,34 @@ void D3D12RaytracingSimpleLighting::InitializeScene()
 		XMFLOAT4 lightAmbientColor;
 		XMFLOAT4 lightDiffuseColor;
 
-		lightPosition = XMFLOAT4(10.0f, 40.0f, 0.0f, 0.0f);
+		lightPosition = XMFLOAT4(30.0f, 30.0f, 30.0f, 1.0f);
+		XMVECTOR lightPosVector = XMLoadFloat4(&lightPosition);
+		XMVECTOR randVec1 = (fabs(XMVectorGetX(XMVector4Normalize(lightPosVector))) < 0.999f) ? XMVectorSet(1, 0, 0, 0) : XMVectorSet(0, 1, 0, 0);
+		XMVECTOR tan1 = 10 * XMVector3Normalize(XMVector3Cross(-lightPosVector, randVec1));
+		XMVECTOR tan2 = 10 * XMVector3Normalize(XMVector3Cross(-lightPosVector, tan1));
+
+		XMFLOAT4 v1, v2, v3, v4, normal;
+		XMStoreFloat4(&v1, lightPosVector + tan1);
+		XMStoreFloat4(&v2, lightPosVector - tan1);
+		XMStoreFloat4(&v3, lightPosVector + tan2);
+		XMStoreFloat4(&v4, lightPosVector - tan2);
+
+		XMStoreFloat4(&normal, XMVector4Normalize(-lightPosVector));
+		/*
+		*/
+		m_sceneCB[frameIndex].v1 = v1;
+		m_sceneCB[frameIndex].v2 = v2;
+		m_sceneCB[frameIndex].v3 = v3;
+		m_sceneCB[frameIndex].v4 = v4;
+		m_sceneCB[frameIndex].normal = normal;
+		
 		m_sceneCB[frameIndex].lightPosition = XMLoadFloat4(&lightPosition);
 		// m_models.push_back(Model("cube.obj", "triangles.png", XMMatrixTranslation(lightPosition.x, lightPosition.y, lightPosition.z)));
 
 		lightAmbientColor = XMFLOAT4(0.15f, 0.15f, 0.15f, 1.0f);
 		m_sceneCB[frameIndex].lightAmbientColor = XMLoadFloat4(&lightAmbientColor);
 
-		lightDiffuseColor = XMFLOAT4(0.5f, 0.5f, 0.5f, 1.0f);
+		lightDiffuseColor = XMFLOAT4(0.7f, 0.7f, 0.7f, 1.0f);
 		m_sceneCB[frameIndex].lightDiffuseColor = XMLoadFloat4(&lightDiffuseColor);
 	}
 
@@ -858,7 +878,6 @@ void D3D12RaytracingSimpleLighting::DoRaytracing()
 	D3D12_DISPATCH_RAYS_DESC dispatchDesc = {};
 	SetCommonPipelineState(commandList);
 	commandList->SetComputeRootShaderResourceView(GlobalRootSignatureParams::AccelerationStructureSlot, m_topLevelAccelerationStructure->GetGPUVirtualAddress());
-	// commandList->SetComputeRootUnorderedAccessView(GlobalRootSignatureParams::OutputViewSlot, m_raytracingOutput->GetGPUVirtualAddress());
 	DispatchRays(m_dxrCommandList.Get(), m_dxrStateObject.Get(), &dispatchDesc);
 }
 

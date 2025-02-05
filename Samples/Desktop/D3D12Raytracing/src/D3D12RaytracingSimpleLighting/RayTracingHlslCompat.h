@@ -21,14 +21,6 @@ using namespace DirectX;
 typedef UINT16 Index;
 #endif
 
-struct SceneConstantBuffer
-{
-    XMMATRIX projectionToWorld;
-    XMVECTOR cameraPosition;
-    XMVECTOR lightPosition;
-    XMVECTOR lightAmbientColor;
-    XMVECTOR lightDiffuseColor;
-};
 
 struct CubeConstantBuffer
 {
@@ -40,6 +32,17 @@ struct Vertex
     XMFLOAT3 position;
     XMFLOAT3 normal;
     XMFLOAT2 uvs;
+};
+struct SceneConstantBuffer
+{
+    XMMATRIX projectionToWorld;
+    XMVECTOR cameraPosition;
+    XMVECTOR lightPosition;
+    XMVECTOR lightAmbientColor;
+    XMVECTOR lightDiffuseColor;
+    // Light surface corners and light normal dir
+    XMFLOAT4 v1, v2, v3, v4;
+    XMFLOAT4 normal;
 };
 
 #endif // RAYTRACINGHLSLCOMPAT_H
