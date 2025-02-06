@@ -60,7 +60,6 @@ public:
     virtual void OnLeftButtonUp(UINT x, UINT y);
     virtual void OnKeyDown(UINT8 key);
     virtual void OnKeyUp(UINT8 key);
-
     
 private:
     static const UINT FrameCount = 3;
@@ -97,6 +96,9 @@ private:
     UINT m_DescriptorsAllocated;
     UINT m_DescriptorIncrementSize;
     
+    // ImGui Descriptor
+    UINT m_ImguiDescriptorIndex;
+
 
     // Raytracing scene
     SceneConstantBuffer m_sceneCB[FrameCount];
@@ -136,17 +138,17 @@ private:
     static const wchar_t* c_shadowAnyHitShaderName;
     
     ComPtr<ID3D12Resource> m_missShaderTable;
+    UINT m_rayGenShaderTableStride;
     ComPtr<ID3D12Resource> m_hitGroupShaderTable;
+    UINT m_hitGroupShaderTableStride;
     ComPtr<ID3D12Resource> m_rayGenShaderTable;
+    UINT m_missShaderTableStride;
     
     // Application state
     StepTimer m_timer;
-    bool m_animationPaused = true;
     bool m_updateAccelerationStructure = false; 
     UINT m_oldMouseXPosition;
     UINT m_oldMouseYPosition;
-    float m_objDistance = 5.0f;
-    float m_objDistDelta = 0.2f;
 
     // Input state Variables
     bool m_mouseClicked;
@@ -194,6 +196,7 @@ private:
     UINT AllocateDescriptor(D3D12_CPU_DESCRIPTOR_HANDLE* cpuDescriptor, UINT descriptorIndexToUse = UINT_MAX);
     UINT CreateBufferSRV(Model::D3DBuffer* buffer, UINT numElements, UINT elementSize, UINT descriptorIndex);
 
-
+    void ImGuiDescriptorAllocate(D3D12_CPU_DESCRIPTOR_HANDLE* out_cpu_handle, D3D12_GPU_DESCRIPTOR_HANDLE* out_gpu_handle);
+    void ImGUiDescriptorRelease();
 
 };
