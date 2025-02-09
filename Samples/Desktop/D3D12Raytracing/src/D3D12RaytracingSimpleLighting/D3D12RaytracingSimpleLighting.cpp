@@ -150,7 +150,7 @@ void D3D12RaytracingSimpleLighting::InitializeScene()
 	// Add models to be rendered in the scene
 	m_models.push_back(Model("teapot.obj", "triangles.png", XMMatrixTranslation(0.0, 2.0, 0.0)));
 	m_models.push_back(Model("cube.obj", "triangles.png", XMMatrixScaling(50, 5, 50) * XMMatrixTranslation(0.0, -2.0, 0.0)));
-	m_models.push_back(Model("cube.obj", "triangles.png", XMMatrixScaling(5, 5, 5) * XMMatrixTranslation(10.0, 5.0, -10.0)));
+	m_models.push_back(Model("cube.obj", "white.png", XMMatrixScaling(5, 5, 5) * XMMatrixTranslation(10.0, 5.0, -10.0)));
 
 
 
@@ -969,8 +969,8 @@ void D3D12RaytracingSimpleLighting::OnRender()
 	// Need to set Output Merger Render Target for ImGui meny rendering
 	D3D12_CPU_DESCRIPTOR_HANDLE rtvHandle = m_deviceResources->GetRenderTargetView();
 	commandList->OMSetRenderTargets(1, &rtvHandle, FALSE, nullptr);
-	//RenderImGui();
-	ImGui::ShowDemoWindow(); // Show demo window! :)
+	RenderImGui();
+	//ImGui::ShowDemoWindow(); // Show demo window! :)
 	
 	
 	ImGui::Render();
@@ -980,6 +980,7 @@ void D3D12RaytracingSimpleLighting::OnRender()
 
 void D3D12RaytracingSimpleLighting::RenderImGui() {
 	/*
+	*/
 	// Create a window called "My First Tool", with a menu bar.
 	ImGui::Begin("My First Tool");
 	if (ImGui::BeginMenuBar())
@@ -998,6 +999,14 @@ void D3D12RaytracingSimpleLighting::RenderImGui() {
 	// ImGui::ColorEdit4("Color", );
 
 	// Generate samples and plot them
+	ImGui::SliderFloat("CamMoveSpeed", &m_cameraMoveSpeed, 0.1, 2.0f, "%.3f");
+	ImGui::SliderFloat("CamAngleSpeed", &m_cameraRotateSpeed, 0.0001, 0.1f, "%.3f");
+	if (ImGui::CollapsingHeader("Objects")) {
+		for (int i = 0; i < m_models.size(); i++) {
+			ImGui::Text((std::to_string(i) + " " + m_models[i].GetName()).c_str());
+		}
+	}
+	/*
 	float samples[100];
 	for (int n = 0; n < 100; n++)
 		samples[n] = sinf(n * 0.2f + ImGui::GetTime() * 1.5f);
@@ -1009,8 +1018,8 @@ void D3D12RaytracingSimpleLighting::RenderImGui() {
 	for (int n = 0; n < 50; n++)
 		ImGui::Text("%04d: Some text", n);
 	ImGui::EndChild();
-	ImGui::End();
 	*/
+	ImGui::End();
 
 }
 
