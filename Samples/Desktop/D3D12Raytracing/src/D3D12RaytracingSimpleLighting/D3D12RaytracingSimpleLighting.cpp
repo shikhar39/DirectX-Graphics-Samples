@@ -112,6 +112,7 @@ void D3D12RaytracingSimpleLighting::UpdateCameraMatrices()
 	auto frameIndex = m_deviceResources->GetCurrentFrameIndex();
 
 	// Calculate Camera View direction based on alt-az angles maintained by the app
+	m_eye = XMVECTOR{ m_camX, m_camY, m_camZ, 1.0 };
 	m_viewDir = XMVector4Transform(XMVectorSet(0.0f, 0.0f, 1.0f, 0.0f), XMMatrixRotationRollPitchYaw(m_altAngle, m_azAngle, 0));
 
 	m_sceneCB[frameIndex].cameraPosition = m_eye;
@@ -150,7 +151,7 @@ void D3D12RaytracingSimpleLighting::InitializeScene()
 	// Add models to be rendered in the scene
 	m_models.push_back(Model("teapot.obj", "triangles.png", XMMatrixTranslation(0.0, 2.0, 0.0)));
 	m_models.push_back(Model("cube.obj", "triangles.png", XMMatrixScaling(50, 5, 50) * XMMatrixTranslation(0.0, -2.0, 0.0)));
-	m_models.push_back(Model("cube.obj", "white.png", XMMatrixScaling(5, 5, 5) * XMMatrixTranslation(10.0, 5.0, -10.0)));
+	// m_models.push_back(Model("cube.obj", "white.png", XMMatrixScaling(5, 5, 5) * XMMatrixTranslation(10.0, 5.0, -10.0)));
 
 
 
@@ -162,11 +163,11 @@ void D3D12RaytracingSimpleLighting::InitializeScene()
 		XMFLOAT4 lightDiffuseColor;
 
 		// Adding a surface area to the light for softer shadows
-		lightPosition = XMFLOAT4(30.0f, 30.0f, 30.0f, 1.0f);
+		lightPosition = XMFLOAT4(20.0f, 20.0f, 20.0f, 1.0f);
 		XMVECTOR lightPosVector = XMLoadFloat4(&lightPosition);
 		XMVECTOR randVec1 = (fabs(XMVectorGetX(XMVector4Normalize(lightPosVector))) < 0.999f) ? XMVectorSet(1, 0, 0, 0) : XMVectorSet(0, 1, 0, 0);
-		XMVECTOR tan1 = 10 * XMVector3Normalize(XMVector3Cross(-lightPosVector, randVec1));
-		XMVECTOR tan2 = 10 * XMVector3Normalize(XMVector3Cross(-lightPosVector, tan1));
+		XMVECTOR tan1 = 2 * XMVector3Normalize(XMVector3Cross(-lightPosVector, randVec1));
+		XMVECTOR tan2 = 2 * XMVector3Normalize(XMVector3Cross(-lightPosVector, tan1));
 
 		XMFLOAT4 v1, v2, v3, v4, normal;
 		XMStoreFloat4(&v1, lightPosVector + tan1);
@@ -800,6 +801,11 @@ void D3D12RaytracingSimpleLighting::OnUpdate()
 		XMVECTOR right = XMVector3Cross(m_up, m_viewDir);
 		m_eye = m_eye + right * m_cameraMoveSpeed;
 	}
+	DirectX::XMFLOAT3 pos;
+	DirectX::XMStoreFloat3(&pos, m_eye);
+	m_camX = m_eye.m128_f32[0];
+	m_camY = m_eye.m128_f32[1];
+	m_camZ = m_eye.m128_f32[2];
 	UpdateCameraMatrices();
 
 	if (m_updateAccelerationStructure) {
@@ -1006,6 +1012,9 @@ void D3D12RaytracingSimpleLighting::RenderImGui() {
 			ImGui::Text((std::to_string(i) + " " + m_models[i].GetName()).c_str());
 		}
 	}
+	ImGui::SliderFloat3("Position", m_eye.m128_f32, -10, 10, "%.1f");
+	ImGui::SliderFloat("Azimuth angle", &m_azAngle, -3.14, 3.14);
+	ImGui::SliderFloat("Alt angle", &m_altAngle, -3.14, 3.14);
 	/*
 	float samples[100];
 	for (int n = 0; n < 100; n++)

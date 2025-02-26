@@ -29,7 +29,7 @@ namespace DX
     {
         DeviceResources() {}
     public:
-        static const unsigned int c_AllowTearing = 0x0;
+        static const unsigned int c_AllowTearing = 0x2;
         static const unsigned int c_RequireTearingSupport = 0x2;
 
         DeviceResources(DXGI_FORMAT backBufferFormat = DXGI_FORMAT_B8G8R8A8_UNORM,

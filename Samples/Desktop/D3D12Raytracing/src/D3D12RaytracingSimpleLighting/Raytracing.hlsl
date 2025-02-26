@@ -17,6 +17,7 @@
 #include "hlslUtils.hlsli"
 
 
+#define nShadowSamples 128 
 RaytracingAccelerationStructure Scene : register(t0, space0);
 RWTexture2D<float4> RenderTarget : register(u0);
 ByteAddressBuffer Indices[] : register(t1, space0);
@@ -28,6 +29,7 @@ SamplerState textureSampler : register(s0);
 
 ConstantBuffer<SceneConstantBuffer> g_sceneCB : register(b0);
 ConstantBuffer<CubeConstantBuffer> g_cubeCB : register(b1);
+
 
 // Load three 16 bit indices from a byte addressed buffer.
 uint3 Load3x16BitIndices(uint offsetBytes)
@@ -214,7 +216,7 @@ void ShadowRayAnyHitShader(inout ShadowRayPayload shpayload, in MyAttributes att
 [shader("miss")]
 void ShadowRayMissShader(inout ShadowRayPayload shpayload)
 {
-    shpayload.shadowFactor = 1.0f/64;
+    shpayload.shadowFactor = 1.0f/nShadowSamples;
 }
 
 [shader("closesthit")]
@@ -262,7 +264,7 @@ void MyClosestHitShader(inout RayPayload payload, in MyAttributes attr)
     light2.v2 = g_sceneCB.v4;
     float totalShadowFactor = 0.0f;
     uint seed = initRand(DispatchRaysIndex().x, DispatchRaysIndex().y);
-    for (int k = 0; k < 64; k++)
+    for (int k = 0; k < nShadowSamples; k++)
     {
         float x1 = nextRand(seed);
         float x2 = nextRand(seed);

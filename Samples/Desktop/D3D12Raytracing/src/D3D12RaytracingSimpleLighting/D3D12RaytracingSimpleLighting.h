@@ -160,8 +160,9 @@ private:
     // Camera Properties
     float m_cameraMoveSpeed = 0.5f;
     float m_cameraRotateSpeed = 0.001;
-    float m_altAngle = 0;
+    float m_camX = 0, m_camY = 18, m_camZ = -38;
     float m_azAngle = 0;
+    float m_altAngle = 0.55;
 
     XMVECTOR m_viewDir;
     XMVECTOR m_eye;
